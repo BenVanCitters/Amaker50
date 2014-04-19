@@ -1,5 +1,6 @@
 class VonShape
 {
+  private PMatrix3D mat; 
   private float[] pos;
   private float[] vel;
   
@@ -7,11 +8,13 @@ class VonShape
   private float[] rotVel;
   
   private float[][] pts;
+  private float[][] spts;
   private float[][] texCoords;	
   private boolean offScr;
   
   public VonShape(MPolygon region, float[] pt)
   {
+    mat = new PMatrix3D();
     offScr = false;
     rotPos = new float[]{0.0f,0.0f,0.0f};
     rotVel = new float[]{0.0f,0.0f,0.0f};//{random(.05),random(.05),random(.05)};
@@ -23,6 +26,7 @@ class VonShape
     // must be careful not to write over the org. data
     float tmp[][] = region.getCoords();
     pts = new float[tmp.length][3];
+    spts = new float[tmp.length][3];
 
     texCoords = new float[pts.length][2];
     for(int i = 0; i < pts.length; i++)
@@ -48,7 +52,7 @@ class VonShape
     rotVel[2] += rtv[2];
   }
   
-  public void update()
+  public void update(float[] lightpos, float trailLen)
   {
     rotPos[0] += rotVel[0];
     rotPos[1] += rotVel[1];
@@ -57,25 +61,48 @@ class VonShape
     pos[0] += vel[0];
     pos[2] += vel[1];
     pos[1] += vel[2];
-    float sx = screenX(pos[0],pos[1],pos[2]);
-    float sy = screenY(pos[0],pos[1],pos[2]);
-    if(sx < 0 || sx > width)
-      offScr = true;
-    if(sy < 0 || sy > height)
-      offScr = true;
+    
+//offscreen testing pretty sure it's not needed here
+//    float sx = screenX(pos[0],pos[1],pos[2]);
+//    float sy = screenY(pos[0],pos[1],pos[2]);
+//    if(sx < 0 || sx > width)
+//      offScr = true;
+//    if(sy < 0 || sy > height)
+//      offScr = true;
+    mat.reset();
+    mat.translate(pos[0],pos[1],pos[2]);
+    mat.rotateX(rotPos[0]);
+    mat.rotateY(rotPos[1]);
+    mat.rotateZ(rotPos[2]);
+    
+    for(int i = 0; i < pts.length;i++)
+    {
+      mat.mult(pts[i],spts[i]);
+      float[] lightDir = new float[]{spts[i][0]-lightpos[0],
+                                     pts[i][1]-lightpos[1],
+                                     pts[i][2]-lightpos[2]};
+      float dirLen = dist(0,0,0, lightDir[0],lightDir[1],lightDir[2]);
+      lightDir[0] /=dirLen; 
+      lightDir[1] /=dirLen;
+      lightDir[2] /=dirLen;
+      
+      lightDir[0] *= trailLen;
+      lightDir[1] *= trailLen;
+      lightDir[2] *= trailLen;
+      spts[i][0]+= lightDir[0];
+      spts[i][1]+= lightDir[1];
+      spts[i][2]+= lightDir[2];
+  //    points[i][0],points[i][1],points[i][2]
+    }
+    
   }
   
   public void draw(PImage tex)
   {
     //textureMode(IMAGE);
     pushMatrix();
-    translate(pos[0],pos[1],pos[2]);
-    rotateX(rotPos[0]);
-    rotateY(rotPos[1]);
-    rotateZ(rotPos[2]);
-//    rotateX(mouseX*TWO_PI/width);
-//    rotateY(random(1));
-//    rotateZ(random(1));
+    applyMatrix(mat);
+
     noStroke();
     beginShape();
     texture(tex);
@@ -84,6 +111,27 @@ class VonShape
       vertex(pts[i][0],pts[i][1],pts[i][2],
              texCoords[i][0],texCoords[i][1]);
     }
+    endShape();
+    popMatrix();
+    
+    pushMatrix();
+    fill(0,0,255,90);
+    noStroke();
+    beginShape(TRIANGLE_STRIP);
+    float newPont[] =new float[3];
+    for(int i = 0; i < pts.length;i++)
+    {
+      mat.mult(pts[i],newPont);
+      fill(0,0,255);
+      vertex(newPont[0],newPont[1],newPont[2]);
+      fill(0,10);
+      vertex(spts[i][0],spts[i][1],spts[i][2]);
+    }
+    mat.mult(pts[0],newPont);
+    fill(0,0,255);
+    vertex(newPont[0],newPont[1],newPont[2]);
+    fill(0,10);
+    vertex(spts[0][0],spts[0][1],spts[0][2]);
     endShape();
     popMatrix();
   }

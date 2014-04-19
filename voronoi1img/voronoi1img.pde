@@ -1,3 +1,4 @@
+import java.util.*;
 import megamu.mesh.*;
 import processing.video.*;
 
@@ -9,7 +10,7 @@ PImage anti;
 
 void setup()
 {
-  size(screen.width,screen.height,P3D);
+  size(displayWidth,displayHeight,P3D);
 //  size(700,550,P3D);
   noCursor();
 //  smooth();
@@ -20,7 +21,15 @@ void setup()
 
 public void initVoronoi()
 {
-  points = new float[3000][2];
+  ArrayList<int[]> validPoints;
+  anti.loadPixels();
+  for(int i = 0; i < anti.pixels.length; i++)
+  {
+    
+  }
+  
+  
+  points = new float[100][2];
   for(int i =0; i < points.length; i++)
   {
     int count = 2;
@@ -43,9 +52,10 @@ void draw()
 {
   background(0);
   lights();
+  float lightpos[]= new float[]{mouseX,mouseY,-100};
   for(int i = 0; i < shapes.length; i++)
   {
-    shapes[i].update();
+    shapes[i].update(lightpos,100);
     shapes[i].draw(anti);
   }
   println("frameRate: " + frameRate);
