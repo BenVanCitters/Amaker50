@@ -3,9 +3,8 @@ import megamu.mesh.*;
 import processing.video.*;
 
 float[][] points;
-MPolygon[] myRegions;
-VonShape[] shapes;
-Voronoi myVoronoi;
+ArrayList<VonShape> shapes;
+
 PImage anti;
 
 void setup()
@@ -21,43 +20,114 @@ void setup()
 
 public void initVoronoi()
 {
-  ArrayList<int[]> validPoints;
+  ArrayList<float[]> validPoints = new ArrayList<float[]>();
+  fillArrayWithValidImagePoints(validPoints,200);
+//  anti.loadPixels();
+//  float brightnessThreshhold = 200;
+//  for(int i = 0; i < anti.pixels.length; i++)
+//  {
+//    if(brightness(anti.pixels[i]) > brightnessThreshhold)
+//    {
+//      int x = i%anti.width;
+//      int y = i/anti.width;
+//      validPoints.add(new float[]{x* width*1.f/anti.width,y* height*1.f/anti.height});
+//    }
+//  }
+  
+  points = new float[900][2];
+  for(int i =0; i < points.length; i++)
+  {
+    if(validPoints.size() > 0)
+    {
+      int ptIndex = (int)random(validPoints.size());
+      points[i] = validPoints.get(ptIndex);
+      validPoints.remove(ptIndex);
+//      points[i][0] = pt[0];
+//      points[i][1] = pt[1];
+    }
+//    int count = 2;
+//    for(int j = 0; j < count; j++)
+//      points[i][0] += random(width*1.0f/count); // first point, x
+//    for(int j = 0; j < count; j++)
+//      points[i][1] += random(height*1.0f/count); // first point, y      
+  }
+
+  validPoints.clear();
+  fillArrayWithValidImagePoints(validPoints,200);
+  Voronoi myVoronoi = new Voronoi( points );
+  MPolygon[] myRegions= myVoronoi.getRegions();
+  
+  shapes = new ArrayList<VonShape>();
+  for(int i = 0; i < myRegions.length; i++)
+  {
+    if(isRegionWithinBounds(myRegions[i], validPoints))
+      shapes.add(new VonShape(myRegions[i],points[i]));
+  }
+}
+
+void fillArrayWithValidImagePoints(ArrayList<float[]> validPoints,float brightnessThreshhold)
+{
   anti.loadPixels();
   for(int i = 0; i < anti.pixels.length; i++)
   {
-    
+    if(brightness(anti.pixels[i]) > brightnessThreshhold)
+    {
+      int x = i%anti.width;
+      int y = i/anti.width;
+      validPoints.add(new float[]{x* width*1.f/anti.width,
+                                  y* height*1.f/anti.height});
+    }
   }
-  
-  
-  points = new float[100][2];
-  for(int i =0; i < points.length; i++)
-  {
-    int count = 2;
-    for(int j = 0; j < count; j++)
-      points[i][0] += random(width*1.0f/count); // first point, x
-    for(int j = 0; j < count; j++)
-      points[i][1] += random(height*1.0f/count); // first point, y      
-  }
+}
 
-  myVoronoi = new Voronoi( points );
-  myRegions = myVoronoi.getRegions();
-  shapes = new VonShape[myRegions.length];
-  for(int i = 0; i < myRegions.length; i++)
-  {
-    shapes[i] = new VonShape(myRegions[i],points[i]);
-  }
+boolean isRegionWithinBounds(MPolygon poly, ArrayList<float[]> validPoints)
+{
+    boolean result = true;
+    float tmp[][] = poly.getCoords();
+
+    float imgSpcCoord[] = new float[]{0,0};
+    for(int i = 0; i < tmp.length; i++)
+    {
+      imgSpcCoord[0] = (int)(tmp[i][0]);// * anti.width*1.f/width); 
+      imgSpcCoord[1] = (int)(tmp[i][1]);// * anti.height*1.f/height);
+      boolean foundMatch = false;
+      for(float[] coord : validPoints)
+      { 
+        float pointDiff[] = new float[]{tmp[i][0]-coord[0],tmp[i][1]-coord[1]};
+        if(dist(0,0,pointDiff[0],pointDiff[1]) < 5)
+        {
+          foundMatch = true;
+          break;
+        }
+//        if((int)(tmp[i][0]) == (int)(coord[0]) && (int)(tmp[i][1]) == (int)(coord[1]))
+//        {
+//          foundMatch = true;
+//          break;
+//        }          
+      }
+      result = result & foundMatch ;
+      
+    }
+    return result;
 }
 
 void draw()
 {
-  background(0);
+  background(255,0,0);
   lights();
   float lightpos[]= new float[]{mouseX,mouseY,-100};
-  for(int i = 0; i < shapes.length; i++)
+  for(VonShape shape : shapes)//for(int i = 0; i < shapes.size(); i++)
   {
-    shapes[i].update(lightpos,100);
-    shapes[i].draw(anti);
+    shape.update(lightpos,100);
+    shape.draw(anti);
   }
+  hint(DISABLE_DEPTH_TEST);
+  for(VonShape shape : shapes)//  int i = 0; i < shapes.length; i++)
+  {
+//    VonShape shape = shapes.get(i);  
+    shape.drawHalo();
+  }   
+  hint(ENABLE_DEPTH_TEST);
   println("frameRate: " + frameRate);
 }
 
@@ -91,9 +161,10 @@ void keyPressed()
       amt = 22.0;
       thtD = .1;          
   }
-  for(int i = 0; i < shapes.length; i++)
+//  for(int i = 0; i < shapes.length; i++)
+for(VonShape shape : shapes)
   {
-    shapes[i].applyForce(new float[]{0,0,0}, 
+    shape.applyForce(new float[]{0,0,0}, 
                              new float[]{random(thtD)-thtD/2,
                                          random(thtD)-thtD/2,
                                          random(thtD)-thtD/2});

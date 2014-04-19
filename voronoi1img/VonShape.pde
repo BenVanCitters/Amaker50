@@ -92,28 +92,11 @@ class VonShape
       spts[i][0]+= lightDir[0];
       spts[i][1]+= lightDir[1];
       spts[i][2]+= lightDir[2];
-  //    points[i][0],points[i][1],points[i][2]
     }
-    
   }
   
-  public void draw(PImage tex)
+  public void drawHalo()
   {
-    //textureMode(IMAGE);
-    pushMatrix();
-    applyMatrix(mat);
-
-    noStroke();
-    beginShape();
-    texture(tex);
-    for(int i = 0; i < pts.length; i++)
-    {
-      vertex(pts[i][0],pts[i][1],pts[i][2],
-             texCoords[i][0],texCoords[i][1]);
-    }
-    endShape();
-    popMatrix();
-    
     pushMatrix();
     fill(0,0,255,90);
     noStroke();
@@ -132,6 +115,24 @@ class VonShape
     vertex(newPont[0],newPont[1],newPont[2]);
     fill(0,10);
     vertex(spts[0][0],spts[0][1],spts[0][2]);
+    endShape();
+    popMatrix();
+  }
+  
+  public void draw(PImage tex)
+  {
+    //textureMode(IMAGE);
+    pushMatrix();
+    applyMatrix(mat);
+
+    noStroke();
+    beginShape();
+    texture(tex);
+    for(int i = 0; i < pts.length; i++)
+    {
+      vertex(pts[i][0],pts[i][1],pts[i][2],
+             texCoords[i][0],texCoords[i][1]);
+    }
     endShape();
     popMatrix();
   }
