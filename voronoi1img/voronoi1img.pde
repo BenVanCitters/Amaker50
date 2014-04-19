@@ -22,17 +22,6 @@ public void initVoronoi()
 {
   ArrayList<float[]> validPoints = new ArrayList<float[]>();
   fillArrayWithValidImagePoints(validPoints,200);
-//  anti.loadPixels();
-//  float brightnessThreshhold = 200;
-//  for(int i = 0; i < anti.pixels.length; i++)
-//  {
-//    if(brightness(anti.pixels[i]) > brightnessThreshhold)
-//    {
-//      int x = i%anti.width;
-//      int y = i/anti.width;
-//      validPoints.add(new float[]{x* width*1.f/anti.width,y* height*1.f/anti.height});
-//    }
-//  }
   
   points = new float[900][2];
   for(int i =0; i < points.length; i++)
@@ -42,14 +31,7 @@ public void initVoronoi()
       int ptIndex = (int)random(validPoints.size());
       points[i] = validPoints.get(ptIndex);
       validPoints.remove(ptIndex);
-//      points[i][0] = pt[0];
-//      points[i][1] = pt[1];
-    }
-//    int count = 2;
-//    for(int j = 0; j < count; j++)
-//      points[i][0] += random(width*1.0f/count); // first point, x
-//    for(int j = 0; j < count; j++)
-//      points[i][1] += random(height*1.0f/count); // first point, y      
+    }  
   }
 
   validPoints.clear();
@@ -82,7 +64,7 @@ void fillArrayWithValidImagePoints(ArrayList<float[]> validPoints,float brightne
 
 boolean isRegionWithinBounds(MPolygon poly, ArrayList<float[]> validPoints)
 {
-    boolean result = true;
+//    boolean result = true;
     float tmp[][] = poly.getCoords();
 
     float imgSpcCoord[] = new float[]{0,0};
@@ -98,24 +80,26 @@ boolean isRegionWithinBounds(MPolygon poly, ArrayList<float[]> validPoints)
         {
           foundMatch = true;
           break;
-        }
-//        if((int)(tmp[i][0]) == (int)(coord[0]) && (int)(tmp[i][1]) == (int)(coord[1]))
-//        {
-//          foundMatch = true;
-//          break;
-//        }          
+        }        
       }
-      result = result & foundMatch ;
-      
+      if(!foundMatch)
+        return false;
+//      result = result & foundMatch ;
     }
-    return result;
+    return true;
 }
 
 void draw()
 {
   background(255,0,0);
-  lights();
-  float lightpos[]= new float[]{mouseX,mouseY,-100};
+  //lights();
+  float tm = millis()/1000.f;
+  float lightpos[]= new float[]{width/2*(1+cos(tm/10)),height/2*(1+sin(tm/10)),5};
+  pushMatrix();
+  translate(lightpos[0],lightpos[1],lightpos[2]);
+  fill(0,255,0);
+  ellipse(0,0,50,50);
+  popMatrix();
   for(VonShape shape : shapes)//for(int i = 0; i < shapes.size(); i++)
   {
     shape.update(lightpos,100);

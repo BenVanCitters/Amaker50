@@ -61,14 +61,7 @@ class VonShape
     pos[0] += vel[0];
     pos[2] += vel[1];
     pos[1] += vel[2];
-    
-//offscreen testing pretty sure it's not needed here
-//    float sx = screenX(pos[0],pos[1],pos[2]);
-//    float sy = screenY(pos[0],pos[1],pos[2]);
-//    if(sx < 0 || sx > width)
-//      offScr = true;
-//    if(sy < 0 || sy > height)
-//      offScr = true;
+
     mat.reset();
     mat.translate(pos[0],pos[1],pos[2]);
     mat.rotateX(rotPos[0]);
@@ -79,8 +72,8 @@ class VonShape
     {
       mat.mult(pts[i],spts[i]);
       float[] lightDir = new float[]{spts[i][0]-lightpos[0],
-                                     pts[i][1]-lightpos[1],
-                                     pts[i][2]-lightpos[2]};
+                                     spts[i][1]-lightpos[1],
+                                     spts[i][2]-lightpos[2]};
       float dirLen = dist(0,0,0, lightDir[0],lightDir[1],lightDir[2]);
       lightDir[0] /=dirLen; 
       lightDir[1] /=dirLen;
