@@ -5,17 +5,32 @@ import processing.video.*;
 float[][] points;
 ArrayList<VonShape> shapes;
 
+RollingSampleListener rSlisten; 
+
+int shaftStartColor = color(255,0,0,50);
+int shaftEndColor = color(0,0,0,1);
 PImage anti;
 
 void setup()
 {
   size(displayWidth,displayHeight,P3D);
 //  size(700,550,P3D);
+  textSize(25);
   noCursor();
 //  smooth();
-  anti = loadImage("anti2.png");
+  anti = loadImage("newFif.png");
   textureMode(IMAGE);
   initVoronoi();  
+  
+  initAudio();
+}
+
+public void initAudio()
+{
+  minim = new Minim(this);
+  in = minim.getLineIn(Minim.MONO, 1024);
+  rSlisten = new RollingSampleListener();
+  in.addListener(rSlisten); 
 }
 
 public void initVoronoi()
@@ -23,7 +38,9 @@ public void initVoronoi()
   ArrayList<float[]> validPoints = new ArrayList<float[]>();
   fillArrayWithValidImagePoints(validPoints,200);
   
-  points = new float[900][2];
+  
+  points = new float[1200][2];
+  println("creating " + points.length + " vonShapes...");
   for(int i =0; i < points.length; i++)
   {
     if(validPoints.size() > 0)
@@ -33,11 +50,13 @@ public void initVoronoi()
       validPoints.remove(ptIndex);
     }  
   }
+  println("...done\ncreating Voronoi regions...");
 
   validPoints.clear();
   fillArrayWithValidImagePoints(validPoints,200);
   Voronoi myVoronoi = new Voronoi( points );
   MPolygon[] myRegions= myVoronoi.getRegions();
+  println("...done\ncropping regions...");
   
   shapes = new ArrayList<VonShape>();
   for(int i = 0; i < myRegions.length; i++)
@@ -45,6 +64,7 @@ public void initVoronoi()
     if(isRegionWithinBounds(myRegions[i], validPoints))
       shapes.add(new VonShape(myRegions[i],points[i]));
   }
+  println("...done");
 }
 
 void fillArrayWithValidImagePoints(ArrayList<float[]> validPoints,float brightnessThreshhold)
@@ -89,28 +109,52 @@ boolean isRegionWithinBounds(MPolygon poly, ArrayList<float[]> validPoints)
     return true;
 }
 
+float levelDiff = 0;
 void draw()
 {
-  background(255,0,0);
-  //lights();
+  background(0);
   float tm = millis()/1000.f;
-  float lightpos[]= new float[]{width/2*(1+cos(tm/10)),height/2*(1+sin(tm/10)),5};
+  float lightpos[]= new float[]{width/2*(1+cos(tm/1.3)/2),
+                                height/2*(1+sin(tm/3.1)/2),
+                                -.01-1000*(1+sin(tm/6))/2};
+  pointLight(255, 255, 255, 
+             lightpos[0],lightpos[1],lightpos[2]);
+  ambientLight(150,150,150);
   pushMatrix();
   translate(lightpos[0],lightpos[1],lightpos[2]);
   fill(0,255,0);
-  ellipse(0,0,50,50);
+//  ellipse(0,0,50,50);
   popMatrix();
+  
+  fill(255);
+  levelDiff = max(0,in.mix.level()-levelDiff);
+  if(levelDiff > .1)
+  {
+    float thtD = .2;
+    for(VonShape shape : shapes)
+    {
+      shape.applyForce(new float[]{0,0,0}, 
+                               new float[]{random(thtD)-thtD/2,
+                                           random(thtD)-thtD/2,
+                                           random(thtD)-thtD/2});
+    }
+  }
+  
+  println("levelDiff: " + levelDiff);
+  float shaftLen = levelDiff;//200*curMax;//(cos(tm/20)+1)/2;
   for(VonShape shape : shapes)//for(int i = 0; i < shapes.size(); i++)
   {
-    shape.update(lightpos,100);
+    shape.update(lightpos,shaftLen,tm);
     shape.draw(anti);
   }
   hint(DISABLE_DEPTH_TEST);
+  noLights();
   for(VonShape shape : shapes)//  int i = 0; i < shapes.length; i++)
   {
-//    VonShape shape = shapes.get(i);  
     shape.drawHalo();
   }   
+  String hashtag = "#Amaker50";
+//  text(hashtag , width/2-textWidth(hashtag)/2,height-50);
   hint(ENABLE_DEPTH_TEST);
   println("frameRate: " + frameRate);
 }
@@ -146,7 +190,7 @@ void keyPressed()
       thtD = .1;          
   }
 //  for(int i = 0; i < shapes.length; i++)
-for(VonShape shape : shapes)
+  for(VonShape shape : shapes)
   {
     shape.applyForce(new float[]{0,0,0}, 
                              new float[]{random(thtD)-thtD/2,
@@ -155,6 +199,10 @@ for(VonShape shape : shapes)
   }
   if (key == 'q') 
   {
-    initVoronoi();
+    saveFrame("/captures/###.png");
   }
+//  if (key == 'q') 
+//  {
+//    initVoronoi();
+//  }
 }
