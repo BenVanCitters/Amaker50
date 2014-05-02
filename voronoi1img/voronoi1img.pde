@@ -7,7 +7,7 @@ ArrayList<VonShape> shapes;
 
 RollingSampleListener rSlisten; 
 
-int shaftStartColor = color(255,0,0,50);
+int shaftStartColor = color(255,170,170,70);
 int shaftEndColor = color(0,0,0,1);
 PImage anti;
 
